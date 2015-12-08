@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		
+		<title></title>
+		<script src="zepto.min.js"></script>
+		<link rel="stylesheet" href="reset.css" />
+		<style>
+			body,html{
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+			}
+			#box{
+				width: 80%;
+				height: 80%;
+				position: absolute;
+				top: 10%;
+				left: 10%;
+			}
+			#box ul{
+				width: 100%;
+				height: 100%;
+			}
+			#box ul li{
+				width: 100%;
+				height: 100%;
+				position: absolute;
+				
+			}
+			.dateBtn{
+				background: #FFFF00;
+				border-radius: 100%;
+				width: 70px;
+				height: 70px;
+				position: absolute;
+				left: 50%;
+				margin-left: -35px;
+				bottom: -35px;
+				z-index: 100;
+			}
+			.dateBtn span{
+				font-size: 24px;
+				line-height: 1;
+			}
+			.dateBtn p{
+				font-size: 12px;
+				-webkit-transform: scale(0.7);
+			}
+			.dateBtn .time_list{
+				width: 100%;
+				height: 40px;
+				line-height: 40px;
+				overflow: hidden;
+				text-align: center;
+				position: relative;
+			}
+			
+			.dateBtn .time_list time{
+				position: absolute;
+				height: 40px;
+				line-height: 40px;
+				width: 100%;
+				left: 0;
+			}
+			.dateBtn .time_list time span{
+				display: inline-block;
+				line-height: 40px;
+				-webkit-transform: translateY(200%);
+			}
+			.dateBtn .time_list time.on span{
+				-webkit-transform: translateY(0);
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div id="box">
+			<ul>
+				<li data-index="0" style="background: #ff0000; z-index: 4;" class="on"></li>
+				<li data-index="1" style="background: #FF8080; z-index: 3;"></li>
+				<li data-index="2" style="background: #FFFF00; z-index: 2;"></li>
+				<li data-index="3" style="background: #4DBF00; z-index: 1;"></li>
+			</ul>
+			<button class="dateBtn">
+				<div class="time_list">
+					<time data-time="DEG 2015" class="on"> <span>0</span> <span>2</span> </time>
+					<time data-time="DEG 2015"> <span>0</span> <span>1</span> </time>
+					<time data-time="NOV 2015"> <span>3</span> <span>0</span> </time>
+					<time data-time="NOV 2015"> <span>2</span> <span>9</span> </time>
+				</div>
+				<p class="dateText">DEG 2015</p>
+			</button>
+		</div>
+		<script>
+	
+			var indexEffect = function( options ){
+				this.box = $( "#box" );
+				this.box_ul = $( "#box ul" );
+				this.show_li = $( "#box ul li.on" );
+				this.lis = $( "#box ul li" );
+				this.offHeight = this.box.height()+this.box.offset().top;
+				
+				this.endFn = options.endFn  || "";  //到底部执行方法
+				this.startFn = options.startFn  || ""; //到顶部执行方法
+				
+				this.offsetTop = options.offsetTop || 100; //到顶部距离多少的地方执行 startFn 方法
+				this.offsetBottom = options.offsetBottom || 100;  //到底部距离多少的地方执行 endFn 方法
+				console.log( this.offsetBottom )
+				this.init();
+			};
+			
+			indexEffect.prototype = {
+				
+				init : function(){
+					this.dateSlideEvent();
+				},
+				
+				dateSlideEvent : function(){
+					var startY = 0;
+					var that = this;
+					var moveY = 0;
+					this.box.on( "touchstart",function(e){
+						e.preventDefault();
+						var touche = e.touches[0];
+						startY  = touche.pageY ;
+						
+						that.show_li.siblings().hide();
+						that.show_li.prev().show();
+						that.show_li.next().show();
+						
+					})
+					this.box.on( "touchmove",function(e){
+						e.preventDefault();
+						var touche = e.touches[0];
+						moveY = touche.pageY-startY+((touche.pageY-startY)*0.5);
+						that.dateSlide( moveY,"touchmove" );
+						if( moveY > 0 ){
+							that.show_li.next().hide();
+						}
+
+					})
+					this.box.on( "touchend",function(e){
+						e.preventDefault();
+						
+						var index = parseInt( that.show_li.index() );
+						
+						
+						if( moveY > 0 ){
+							index--;
+						}else{
+							index++;
+							
+						}
+						/*console.log( index )*/
+						
+						if( index <= 0  ){
+							index = 0;
+						}else if( index >= that.lis.length-1 ){
+							index = that.lis.length-1;
+						}
+						
+					
+						moveY = moveY > 0 ? 0 : -(that.box.height()+that.box.offset().top);
+						
+						
+						
+						that.dateSlide( moveY,"touchend",function(){
+							
+							that.show_li = $( "#box ul li" ).eq(index);
+							that.show_li.addClass("on").siblings().removeClass("on");
+							$( ".time_list time").eq(index).addClass("on").siblings().removeClass("on");
+						});
+					
+					})
+				},
+				
+				/**
+				 * 滚动效果
+				 * @param {Number} slideY  滚动的Y轴数字
+				 * @param {String} eventType 事件类型
+				 * @param {Function} callback 事手指抬起后动画完成回调函数
+				 */
+				dateSlide : function( slideY,eventType,callback ){
+					
+				
+					if( slideY >= 0 ){
+						this.slideDown(slideY,eventType,callback);
+					}else{
+						this.slideUp(slideY,eventType,callback);
+					}
+					
+				},
+				
+				/**
+				 * 向下滑动
+				 * @param {Number} slideY  滚动的Y轴数字
+				 * @param {String} eventType 事件类型
+				 * @param {Function} callback 事手指抬起后动画完成回调函数
+				 */
+				slideDown : function(slideY,eventType,callback){
+					
+							
+					var that = this;
+					if( this.show_li.prev().length <= 0 ){
+						if( eventType == "touchmove" ){
+							this.box_ul.css({
+								"-webkit-transform" :"translateY("+slideY+"px)" 
+							})
+							if( slideY > this.offsetTop){
+								this.startFn()
+							}
+							
+						}else{
+							this.box_ul.animate({
+								"-webkit-transform" :"translateY(0px)" 
+							})
+						}
+					}else{
+						this.zoomList( slideY,eventType )
+						this.wenSlide( slideY,eventType )
+						if( eventType == "touchmove" ){
+							if( slideY>=0 ){
+								this.show_li.css({
+									"top" :0
+								})
+								this.show_li.prev().css({
+									"top" :-that.offHeight+slideY
+								})
+							}else{
+								this.show_li.css({
+									"top" :slideY
+								})
+							}
+						}else{
+							
+							this.show_li.prev().animate({
+								"top" :0
+							},200,"ease-out",function(){
+								callback();
+							})
+						}
+						
+						
+						
+						
+					}
+				},
+				
+				
+				/**
+				 * 向上滑动
+				 * @param {Number} slideY  滚动的Y轴数字
+				 * @param {String} eventType 事件类型
+				 * @param {Function} callback 事手指抬起后动画完成回调函数
+				 */
+				slideUp : function(slideY,eventType,callback){
+					
+					if( this.show_li.next().length <= 0 ){
+						if( eventType == "touchmove" ){
+							$( ".dateBtn" ).css({
+								"-webkit-transform" :"translateY("+slideY+"px)" 
+							})
+							
+							if( slideY < -this.offsetBottom ){
+								this.endFn()
+							}
+						}else{
+							$( ".dateBtn" ).animate({
+								"-webkit-transform" :"translateY(0px)" 
+							})
+						}
+					}else{
+						this.zoomList( slideY,eventType )
+						this.wenSlide( slideY,eventType )
+						if( eventType == "touchmove" ){
+							this.show_li.css({
+								"top" :slideY
+							})
+						}else{
+							this.show_li.animate({
+								"top" :slideY
+							},200,"ease-out",function(){
+								callback();
+							})
+							
+						}
+						
+					}
+					
+					
+					
+				},
+				
+				/**
+				 * 缩放效果
+				 * @param {Object} slideY
+				 * @param {Object} eventType
+				 */
+				zoomList : function( slideY,eventType ){
+					var scaleVal =  Math.abs( slideY/(this.box.height()+this.box.offset().top) )*0.1+0.9
+					
+					scaleVal = scaleVal >= 1 ? 1 : scaleVal;
+					
+					
+					
+					if( slideY >= 0 ){
+						if( eventType == "touchend" ){
+							this.show_li.animate({
+								"-webkit-transform" :"scale("+(scaleVal)+")" 
+							},100)
+						}else{
+							
+							this.show_li.prev().css({
+								"-webkit-transform" :"scale(1)" 
+							})
+							
+							scaleVal =  Math.abs( (this.offHeight-slideY)/this.offHeight*0.1+0.9 );
+							this.show_li.css({
+								"-webkit-transform" :"scale("+(scaleVal)+")" 
+							})
+						}
+					}else{
+						if( eventType == "touchend" ){
+							this.show_li.prev().animate({
+								"-webkit-transform" :"scale("+scaleVal+")" 
+							},200)
+							
+							this.show_li.next().animate({
+								"-webkit-transform" :"scale("+(scaleVal)+")" 
+								
+							},200)
+						}else{
+							this.show_li.prev().css({
+								"-webkit-transform" :"scale("+scaleVal+")" 
+							})
+							
+							this.show_li.next().css({
+								"-webkit-transform" :"scale("+(scaleVal)+")" 
+								
+							})
+						}
+					}
+				},
+				
+				
+				wenSlide : function( slideY,eventType ){
+					var translateVal =  Math.abs( slideY/(this.box.height()+this.box.offset().top) )*80;
+					
+					//向下
+					var timeOn = $( ".time_list time.on" );
+					if( slideY >= 0 ){
+						
+						$( ".time_list time.on span" ).eq(0).css({
+							"-webkit-transform" : "translateY("+translateVal+"px)"
+						})
+						
+						if( Math.abs( translateVal ) > 10 ){
+							$( ".time_list time.on span" ).eq(1).css({
+								"-webkit-transform" : "translateY("+(translateVal-10)+"px)"
+							})
+						}
+						
+						if( Math.abs( translateVal ) > 30 ){
+							$( ".dateText" ).text( timeOn.prev().data("time") )
+							if( (Math.abs(translateVal)-60) >= 0 ){
+								timeOn.prev().find("span").eq(1).css({
+									"-webkit-transform" : "translateY(0px)"
+								})
+							}else{
+								timeOn.prev().find("span").eq(1).css({
+									"-webkit-transform" : "translateY("+(Math.abs(translateVal)-60)+"px)"
+								})
+							}
+						}
+						
+						if( Math.abs( translateVal ) > 40 ){
+							
+							if( (Math.abs(translateVal)-70) >= 0 ){
+								$( ".time_list time.on" ).prev().find("span").eq(0).css({
+									"-webkit-transform" : "translateY(0px)"
+								})
+							}else{
+								$( ".time_list time.on" ).prev().find("span").eq(0).css({
+									"-webkit-transform" : "translateY("+(Math.abs(translateVal)-70)+"px)"
+								})
+							}
+						}
+						if( eventType == "touchend" ){
+							$( ".time_list time.on span" ).css({
+								"-webkit-transform" : "translateY(-200%)"
+							})
+							$( ".time_list time.on" ).prev().find("span").animate({
+								"-webkit-transform" : "translateY(0px)"
+							},200)
+						}
+					}else{
+						
+						$( ".time_list time.on span" ).eq(0).css({
+							"-webkit-transform" : "translateY(-"+translateVal+"px)"
+						})
+						if( translateVal > 10 ){
+							$( ".time_list time.on span" ).eq(1).css({
+								"-webkit-transform" : "translateY(-"+(translateVal-10)+"px)"
+							})
+						}
+						
+						if( translateVal > 30 ){
+							$( ".dateText" ).text( timeOn.next().data("time") )
+							if( (60-translateVal) < 0 ){
+								timeOn.next().find("span").eq(1).css({
+									"-webkit-transform" : "translateY(0px)"
+								})
+							}else{
+								timeOn.next().find("span").eq(1).css({
+									"-webkit-transform" : "translateY("+(60-translateVal)+"px)"
+								})
+							}
+							
+						}
+						if( translateVal > 40 ){
+							if( (70-translateVal) < 0 ){
+								$( ".time_list time.on" ).next().find("span").eq(0).css({
+									"-webkit-transform" : "translateY(0px)"
+								})
+							}else{
+								$( ".time_list time.on" ).next().find("span").eq(0).css({
+									"-webkit-transform" : "translateY("+(70-translateVal)+"px)"
+								})
+							}
+						}
+					}
+					
+				}
+			}
+			
+			new indexEffect({
+				offsetTop : 200,
+				offsetBottom : 200,
+				startFn : function(){
+					alert( "到头了" )
+				},
+				endFn : function(){
+					alert( "到底了" )
+				}
+				
+			});
+		</script>
+	</body>
+</html>
